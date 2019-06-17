@@ -17,7 +17,7 @@ public class MyInfoPacketIn extends PacketIn {
     @Override
     public void process(DepenizenConnection connection, ByteBuf data) {
         if (data.readableBytes() < 4) {
-            connection.fail("Invalid MyInfo (bytes available: " + data.readableBytes() + ")");
+            connection.fail("Invalid MyInfoPacket (bytes available: " + data.readableBytes() + ")");
             return;
         }
         int port = data.readInt();

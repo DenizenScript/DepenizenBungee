@@ -1,10 +1,16 @@
 package com.denizenscript.depenizen.bungee;
 
+import com.denizenscript.depenizen.bungee.packets.in.ControlProxyPingPacketIn;
 import com.denizenscript.depenizen.bungee.packets.in.MyInfoPacketIn;
+import com.denizenscript.depenizen.bungee.packets.in.ProxyPingResultPacketIn;
 import com.denizenscript.depenizen.bungee.packets.in.SendPlayerPacketIn;
+import com.denizenscript.depenizen.bungee.packets.out.PlayerJoinPacketOut;
+import com.denizenscript.depenizen.bungee.packets.out.PlayerQuitPacketOut;
+import com.denizenscript.depenizen.bungee.packets.out.PlayerSwitchServerPacketOut;
+import com.denizenscript.depenizen.bungee.packets.out.ProxyPingPacketOut;
 import io.netty.channel.Channel;
 import net.md_5.bungee.api.config.ServerInfo;
-import net.md_5.bungee.api.event.PlayerHandshakeEvent;
+import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.YamlConfiguration;
@@ -58,6 +64,8 @@ public class DepenizenBungee extends Plugin implements Listener {
     public void registerPackets() {
         packets.put(10, new SendPlayerPacketIn());
         packets.put(11, new MyInfoPacketIn());
+        packets.put(12, new ControlProxyPingPacketIn());
+        packets.put(13, new ProxyPingResultPacketIn());
     }
 
     @Override
@@ -67,6 +75,57 @@ public class DepenizenBungee extends Plugin implements Listener {
         getProxy().getPluginManager().registerListener(this, this);
         configFile = new File(getDataFolder(), "config.yml");
         registerPackets();
+    }
+
+    public void broadcastPacket(PacketOut packet) {
+        for (DepenizenConnection connection : getConnections()) {
+            connection.sendPacket(packet);
+        }
+    }
+
+    @EventHandler
+    public void onProxyPing(ProxyPingEvent event) {
+        for (DepenizenConnection connection : getConnections()) {
+            if (connection.controlsProxyPing && connection.isValid) {
+                event.registerIntent(this);
+                long id = connection.proxyPingId++;
+                connection.proxyEventMap.put(id, event);
+                ProxyPingPacketOut packet = new ProxyPingPacketOut();
+                packet.id = id;
+                packet.address = event.getConnection().getAddress().toString();
+                packet.currentPlayers = event.getResponse().getPlayers().getOnline();
+                packet.maxPlayers = event.getResponse().getPlayers().getMax();
+                packet.motd = event.getResponse().getDescriptionComponent().toLegacyText();
+                packet.protocol = event.getResponse().getVersion().getProtocol();
+                packet.version = event.getResponse().getVersion().getName();
+                connection.sendPacket(packet);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onServerSwitch(ServerConnectEvent event) {
+        PlayerSwitchServerPacketOut packet = new PlayerSwitchServerPacketOut();
+        packet.name = event.getPlayer().getName();
+        packet.uuid = event.getPlayer().getUniqueId();
+        packet.newServer = event.getTarget().getName();
+        broadcastPacket(packet);
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PostLoginEvent event) {
+        PlayerJoinPacketOut packet = new PlayerJoinPacketOut();
+        packet.name = event.getPlayer().getName();
+        packet.uuid = event.getPlayer().getUniqueId();
+        broadcastPacket(packet);
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerDisconnectEvent event) {
+        PlayerQuitPacketOut packet = new PlayerQuitPacketOut();
+        packet.name = event.getPlayer().getName();
+        packet.uuid = event.getPlayer().getUniqueId();
+        broadcastPacket(packet);
     }
 
     @EventHandler

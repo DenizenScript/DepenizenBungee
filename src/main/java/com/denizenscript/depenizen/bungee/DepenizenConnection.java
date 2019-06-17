@@ -8,8 +8,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
+import net.md_5.bungee.api.event.ProxyPingEvent;
 
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 public class DepenizenConnection extends ChannelInboundHandlerAdapter {
@@ -47,9 +49,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
             @Override
             public void run() {
                 if (thisServer.getName() != null) {
-                    for (DepenizenConnection connection : DepenizenBungee.instance.getConnections()) {
-                        connection.sendPacket(new AddServerPacketOut(thisServer.getName()));
-                    }
+                    DepenizenBungee.instance.broadcastPacket(new AddServerPacketOut(thisServer.getName()));
                 }
             }
         }, 0, TimeUnit.MILLISECONDS);
@@ -60,9 +60,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
             @Override
             public void run() {
                 if (thisServer.getName() != null) {
-                    for (DepenizenConnection connection : DepenizenBungee.instance.getConnections()) {
-                        connection.sendPacket(new RemoveServerPacketOut(thisServer.getName()));
-                    }
+                    DepenizenBungee.instance.broadcastPacket(new RemoveServerPacketOut(thisServer.getName()));
                 }
             }
         }, 0, TimeUnit.MILLISECONDS);
@@ -88,6 +86,12 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
 
     public ServerInfo thisServer;
 
+    public boolean controlsProxyPing = false;
+
+    public long proxyPingId = 1;
+
+    public HashMap<Long, ProxyPingEvent> proxyEventMap = new HashMap<>();
+
     public void sendPacket(PacketOut packet) {
         ByteBuf buf = channel.alloc().buffer();
         packet.writeTo(buf);
@@ -111,6 +115,10 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         isValid = false;
         DepenizenBungee.instance.removeConnection(this);
         broadcastRemoval();
+        for (ProxyPingEvent event : proxyEventMap.values()) {
+            event.completeIntent(DepenizenBungee.instance);
+        }
+        proxyEventMap.clear();
     }
 
     @Override
