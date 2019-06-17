@@ -1,8 +1,8 @@
 package com.denizenscript.depenizen.bungee;
 
+import com.denizenscript.depenizen.bungee.packets.in.MyInfoPacketIn;
 import com.denizenscript.depenizen.bungee.packets.in.SendPlayerPacketIn;
 import io.netty.channel.Channel;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.event.PlayerHandshakeEvent;
 import net.md_5.bungee.api.plugin.Listener;
@@ -16,7 +16,9 @@ import java.io.File;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class DepenizenBungee extends Plugin implements Listener {
@@ -33,8 +35,29 @@ public class DepenizenBungee extends Plugin implements Listener {
 
     public HashMap<Integer, PacketIn> packets = new HashMap<>();
 
+    public final List<DepenizenConnection> connections = new ArrayList<>();
+
+    public void addConnection(DepenizenConnection connection) {
+        synchronized (connections) {
+            connections.add(connection);
+        }
+    }
+
+    public void removeConnection(DepenizenConnection connection) {
+        synchronized (connections) {
+            connections.remove(connection);
+        }
+    }
+
+    public List<DepenizenConnection> getConnections() {
+        synchronized (connections) {
+            return new ArrayList<>(connections);
+        }
+    }
+
     public void registerPackets() {
         packets.put(10, new SendPlayerPacketIn());
+        packets.put(11, new MyInfoPacketIn());
     }
 
     @Override
@@ -54,7 +77,7 @@ public class DepenizenBungee extends Plugin implements Listener {
             return;
         }
         getLogger().info("Depenizen handshake seen from: " + handler.getAddress());
-        InetAddress address = handler.getAddress().getAddress();
+        final InetAddress address = handler.getAddress().getAddress();
         if (!address.isLoopbackAddress()) { // Localhost is always allowed
             boolean isValid = false;
             for (ServerInfo info : getProxy ().getServers().values()) {
@@ -80,7 +103,7 @@ public class DepenizenBungee extends Plugin implements Listener {
             getProxy().getScheduler().schedule(this, new Runnable() {
                 @Override
                 public void run() {
-                    connection.build(channel);
+                    connection.build(channel, address);
                 }
             }, 500, TimeUnit.MILLISECONDS);
         }

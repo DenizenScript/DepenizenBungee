@@ -1,20 +1,35 @@
 package com.denizenscript.depenizen.bungee;
 
+import com.denizenscript.depenizen.bungee.packets.out.AddServerPacketOut;
+import com.denizenscript.depenizen.bungee.packets.out.RemoveServerPacketOut;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.config.ServerInfo;
+
+import java.net.InetAddress;
+import java.util.concurrent.TimeUnit;
 
 public class DepenizenConnection extends ChannelInboundHandlerAdapter {
 
-    public void build(Channel channel) {
+    public void build(Channel channel, InetAddress address) {
+        this.serverAddress = address;
         this.channel = channel;
         connectionName = channel.remoteAddress().toString();
         while (channel.pipeline().firstContext() != null) {
             channel.pipeline().removeFirst();
         }
         channel.pipeline().addLast(this).addLast(new NettyExceptionHandler());
+        for (DepenizenConnection server : DepenizenBungee.instance.getConnections()) {
+            if (server.thisServer.getName() != null) {
+                sendPacket(new AddServerPacketOut(server.thisServer.getName()));
+            }
+        }
+        DepenizenBungee.instance.addConnection(this);
         DepenizenBungee.instance.getLogger().info("Connection '" + connectionName + "' now under control of Depenizen.");
+        isValid = true;
     }
 
     public void fail(String reason) {
@@ -26,6 +41,34 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         AWAIT_HEADER,
         AWAIT_DATA
     }
+
+    public void broadcastIdentity() {
+        ProxyServer.getInstance().getScheduler().schedule(DepenizenBungee.instance, new Runnable() {
+            @Override
+            public void run() {
+                if (thisServer.getName() != null) {
+                    for (DepenizenConnection connection : DepenizenBungee.instance.getConnections()) {
+                        connection.sendPacket(new AddServerPacketOut(thisServer.getName()));
+                    }
+                }
+            }
+        }, 0, TimeUnit.MILLISECONDS);
+    }
+
+    public void broadcastRemoval() {
+        ProxyServer.getInstance().getScheduler().schedule(DepenizenBungee.instance, new Runnable() {
+            @Override
+            public void run() {
+                if (thisServer.getName() != null) {
+                    for (DepenizenConnection connection : DepenizenBungee.instance.getConnections()) {
+                        connection.sendPacket(new RemoveServerPacketOut(thisServer.getName()));
+                    }
+                }
+            }
+        }, 0, TimeUnit.MILLISECONDS);
+    }
+
+    public boolean isValid = false;
 
     public String connectionName;
 
@@ -39,6 +82,22 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
 
     public int packetId;
 
+    public int serverPort;
+
+    public InetAddress serverAddress;
+
+    public ServerInfo thisServer;
+
+    public void sendPacket(PacketOut packet) {
+        ByteBuf buf = channel.alloc().buffer();
+        packet.writeTo(buf);
+        ByteBuf header = channel.alloc().buffer();
+        header.writeInt(buf.writerIndex());
+        header.writeInt(packet.getPacketId());
+        channel.write(header);
+        channel.writeAndFlush(buf);
+    }
+
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
         tmp = ctx.alloc().buffer(4);
@@ -49,6 +108,9 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         DepenizenBungee.instance.getLogger().info("Connection '" + connectionName + "' ended.");
         tmp.release();
         tmp = null;
+        isValid = false;
+        DepenizenBungee.instance.removeConnection(this);
+        broadcastRemoval();
     }
 
     @Override
@@ -65,14 +127,13 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
                     fail("Invalid packet id: " + packetId);
                     return;
                 }
-                DepenizenBungee.instance.getLogger().info("Received packet " + DepenizenBungee.instance.packets.get(packetId).getName()); // TODO: Temp!
             }
         }
         if (currentStage == Stage.AWAIT_DATA) {
             if (tmp.readableBytes() >= waitingLength) {
                 try {
-                    DepenizenBungee.instance.getLogger().info("Process packet " + DepenizenBungee.instance.packets.get(packetId).getName()); // TODO: Temp!
-                    DepenizenBungee.instance.packets.get(packetId).process(this, tmp);
+                    PacketIn packet = DepenizenBungee.instance.packets.get(packetId);
+                    packet.process(this, tmp);
                     currentStage = Stage.AWAIT_HEADER;
                 }
                 catch (Throwable ex) {
