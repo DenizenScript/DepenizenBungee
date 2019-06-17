@@ -1,0 +1,4 @@
+name: DepenizenBungee
+main: com.denizenscript.depenizen.bungee.DepenizenBungee
+version: 2.0.0
+author: The DenizenScript Team
