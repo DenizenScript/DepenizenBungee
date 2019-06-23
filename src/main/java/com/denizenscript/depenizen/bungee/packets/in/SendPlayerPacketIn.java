@@ -42,8 +42,12 @@ public class SendPlayerPacketIn extends PacketIn {
         }
         ServerInfo info = ProxyServer.getInstance().getServerInfo(serverName);
         if (info == null) {
-            DepenizenBungee.instance.getLogger().warning("Invalid server name '" + serverName + "'");
-            return;
+            DepenizenConnection targetConnection = DepenizenBungee.instance.getConnectionByName(serverName);
+            if (targetConnection == null) {
+                DepenizenBungee.instance.getLogger().warning("Invalid server name '" + serverName + "'");
+                return;
+            }
+            info = targetConnection.thisServer;
         }
         player.connect(info);
     }

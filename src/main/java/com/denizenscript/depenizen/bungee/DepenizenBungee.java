@@ -1,9 +1,6 @@
 package com.denizenscript.depenizen.bungee;
 
-import com.denizenscript.depenizen.bungee.packets.in.ControlProxyPingPacketIn;
-import com.denizenscript.depenizen.bungee.packets.in.MyInfoPacketIn;
-import com.denizenscript.depenizen.bungee.packets.in.ProxyPingResultPacketIn;
-import com.denizenscript.depenizen.bungee.packets.in.SendPlayerPacketIn;
+import com.denizenscript.depenizen.bungee.packets.in.*;
 import com.denizenscript.depenizen.bungee.packets.out.PlayerJoinPacketOut;
 import com.denizenscript.depenizen.bungee.packets.out.PlayerQuitPacketOut;
 import com.denizenscript.depenizen.bungee.packets.out.PlayerSwitchServerPacketOut;
@@ -25,6 +22,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class DepenizenBungee extends Plugin implements Listener {
@@ -61,11 +59,22 @@ public class DepenizenBungee extends Plugin implements Listener {
         }
     }
 
+    public DepenizenConnection getConnectionByName(String name) {
+        name = name.toLowerCase(Locale.ENGLISH);
+        for (DepenizenConnection connection : getConnections()) {
+            if (connection.thisServer != null && name.equals(connection.thisServer.getName().toLowerCase(Locale.ENGLISH))) {
+                return connection;
+            }
+        }
+        return null;
+    }
+
     public void registerPackets() {
         packets.put(10, new SendPlayerPacketIn());
         packets.put(11, new MyInfoPacketIn());
         packets.put(12, new ControlProxyPingPacketIn());
         packets.put(13, new ProxyPingResultPacketIn());
+        packets.put(14, new RedirectPacketIn());
     }
 
     @Override
