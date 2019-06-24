@@ -24,12 +24,10 @@ public class RedirectPacketIn extends PacketIn {
             connection.fail("Invalid RedirectPacket (name bytes requested: " + targetServerNameLength + ")");
             return;
         }
-        byte[] serverNameBytes = new byte[targetServerNameLength];
-        data.readBytes(serverNameBytes, 0, targetServerNameLength);
         String serverName = readString(data, targetServerNameLength);
         int newPacketLen = data.readInt();
         if (data.readableBytes() < newPacketLen || newPacketLen < 0) {
-            connection.fail("Invalid RedirectPacket (packet bytes requested: " + targetServerNameLength + ")");
+            connection.fail("Invalid RedirectPacket (packet bytes requested: " + newPacketLen + ")");
             return;
         }
         int newId = data.readInt();

@@ -98,7 +98,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         ByteBuf header = channel.alloc().buffer();
         header.writeInt(buf.writerIndex());
         header.writeInt(packet.getPacketId());
-        channel.write(header);
+        channel.writeAndFlush(header);
         channel.writeAndFlush(buf);
     }
 

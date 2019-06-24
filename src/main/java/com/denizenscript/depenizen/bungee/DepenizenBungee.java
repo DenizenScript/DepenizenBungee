@@ -10,13 +10,10 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
-import net.md_5.bungee.config.YamlConfiguration;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
 
-import java.io.File;
-import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -28,14 +25,6 @@ import java.util.concurrent.TimeUnit;
 public class DepenizenBungee extends Plugin implements Listener {
 
     public static DepenizenBungee instance;
-
-    public YamlConfiguration config;
-
-    public File configFile;
-
-    public void saveDefaultConfig() {
-        InputStream is = DepenizenBungee.class.getClassLoader().getResourceAsStream("config.yml");
-    }
 
     public HashMap<Integer, PacketIn> packets = new HashMap<>();
 
@@ -70,6 +59,7 @@ public class DepenizenBungee extends Plugin implements Listener {
     }
 
     public void registerPackets() {
+        packets.put(0, new KeepAlivePacketIn());
         packets.put(10, new SendPlayerPacketIn());
         packets.put(11, new MyInfoPacketIn());
         packets.put(12, new ControlProxyPingPacketIn());
@@ -83,7 +73,6 @@ public class DepenizenBungee extends Plugin implements Listener {
         instance = this;
         getLogger().info("DepenizenBungee loading...");
         getProxy().getPluginManager().registerListener(this, this);
-        configFile = new File(getDataFolder(), "config.yml");
         registerPackets();
     }
 
