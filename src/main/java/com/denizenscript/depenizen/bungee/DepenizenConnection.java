@@ -25,7 +25,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         }
         channel.pipeline().addLast(this).addLast(new NettyExceptionHandler());
         for (DepenizenConnection server : DepenizenBungee.instance.getConnections()) {
-            if (server.thisServer.getName() != null) {
+            if (server.thisServer != null && server.thisServer.getName() != null) {
                 sendPacket(new AddServerPacketOut(server.thisServer.getName()));
             }
         }
@@ -35,7 +35,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
     }
 
     public void fail(String reason) {
-        DepenizenBungee.instance.getLogger().info("Connection '" + connectionName + "' failed: " + reason);
+        DepenizenBungee.instance.getLogger().info("Connection '" + connectionName + (thisServer == null ? "" : (" / " + thisServer.getName())) + "' failed: " + reason);
         channel.close();
     }
 
@@ -90,6 +90,8 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
 
     public long proxyPingId = 1;
 
+    public long lastPacketReceived = 0;
+
     public HashMap<Long, ProxyPingEvent> proxyEventMap = new HashMap<>();
 
     public void sendPacket(PacketOut packet) {
@@ -105,6 +107,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
         tmp = ctx.alloc().buffer(4);
+        lastPacketReceived = System.currentTimeMillis();
     }
 
     @Override
@@ -140,6 +143,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         if (currentStage == Stage.AWAIT_DATA) {
             if (tmp.readableBytes() >= waitingLength) {
                 try {
+                    lastPacketReceived = System.currentTimeMillis();
                     PacketIn packet = DepenizenBungee.instance.packets.get(packetId);
                     packet.process(this, tmp);
                     currentStage = Stage.AWAIT_HEADER;

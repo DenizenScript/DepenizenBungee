@@ -13,6 +13,11 @@ public class KeepAlivePacketIn extends PacketIn {
 
     @Override
     public void process(DepenizenConnection connection, ByteBuf data) {
-        // Do nothing
+        if (data.readableBytes() < 512) {
+            connection.fail("Invalid KeepAlivePacket (bytes available: " + data.readableBytes() + ")");
+            return;
+        }
+        // Read and ignore empty buffer
+        data.readBytes(512);
     }
 }

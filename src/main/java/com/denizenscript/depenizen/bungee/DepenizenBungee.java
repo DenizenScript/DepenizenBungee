@@ -1,11 +1,9 @@
 package com.denizenscript.depenizen.bungee;
 
 import com.denizenscript.depenizen.bungee.packets.in.*;
-import com.denizenscript.depenizen.bungee.packets.out.PlayerJoinPacketOut;
-import com.denizenscript.depenizen.bungee.packets.out.PlayerQuitPacketOut;
-import com.denizenscript.depenizen.bungee.packets.out.PlayerSwitchServerPacketOut;
-import com.denizenscript.depenizen.bungee.packets.out.ProxyPingPacketOut;
+import com.denizenscript.depenizen.bungee.packets.out.*;
 import io.netty.channel.Channel;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
@@ -74,6 +72,22 @@ public class DepenizenBungee extends Plugin implements Listener {
         getLogger().info("DepenizenBungee loading...");
         getProxy().getPluginManager().registerListener(this, this);
         registerPackets();
+        ProxyServer.getInstance().getScheduler().schedule(this, new Runnable() {
+            @Override
+            public void run() {
+                long curTime = System.currentTimeMillis();
+                KeepAlivePacketOut packet = new KeepAlivePacketOut();
+                for (DepenizenConnection connection : getConnections()) {
+                    if (curTime > connection.lastPacketReceived + 20 * 1000) {
+                        // 20 seconds without a packet = connection lost!
+                        connection.fail("Connection time out.");
+                    }
+                    else {
+                        connection.sendPacket(packet);
+                    }
+                }
+            }
+        }, 1, 1, TimeUnit.SECONDS);
     }
 
     public void broadcastPacket(PacketOut packet) {
