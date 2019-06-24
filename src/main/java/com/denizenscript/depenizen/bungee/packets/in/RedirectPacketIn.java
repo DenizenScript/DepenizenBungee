@@ -4,7 +4,6 @@ import com.denizenscript.depenizen.bungee.DepenizenBungee;
 import com.denizenscript.depenizen.bungee.DepenizenConnection;
 import com.denizenscript.depenizen.bungee.PacketIn;
 import com.denizenscript.depenizen.bungee.packets.out.RedirectedPacketOut;
-import com.google.common.base.Charsets;
 import io.netty.buffer.ByteBuf;
 
 public class RedirectPacketIn extends PacketIn {
@@ -27,7 +26,7 @@ public class RedirectPacketIn extends PacketIn {
         }
         byte[] serverNameBytes = new byte[targetServerNameLength];
         data.readBytes(serverNameBytes, 0, targetServerNameLength);
-        String serverName = new String(serverNameBytes, Charsets.UTF_8);
+        String serverName = readString(data, targetServerNameLength);
         int newPacketLen = data.readInt();
         if (data.readableBytes() < newPacketLen || newPacketLen < 0) {
             connection.fail("Invalid RedirectPacket (packet bytes requested: " + targetServerNameLength + ")");

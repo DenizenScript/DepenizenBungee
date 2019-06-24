@@ -3,7 +3,6 @@ package com.denizenscript.depenizen.bungee.packets.in;
 import com.denizenscript.depenizen.bungee.DepenizenBungee;
 import com.denizenscript.depenizen.bungee.DepenizenConnection;
 import com.denizenscript.depenizen.bungee.PacketIn;
-import com.google.common.base.Charsets;
 import io.netty.buffer.ByteBuf;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -32,9 +31,7 @@ public class SendPlayerPacketIn extends PacketIn {
             connection.fail("Invalid SendPlayerPacket (name bytes requested: " + targetNameLength + ")");
             return;
         }
-        byte[] serverNameBytes = new byte[targetNameLength];
-        data.readBytes(serverNameBytes, 0, targetNameLength);
-        String serverName = new String(serverNameBytes, Charsets.UTF_8);
+        String serverName = readString(data, targetNameLength);
         ProxiedPlayer player = ProxyServer.getInstance().getPlayer(uuid);
         if (player == null) {
             DepenizenBungee.instance.getLogger().warning("Invalid player uuid '" + uuid + "'");

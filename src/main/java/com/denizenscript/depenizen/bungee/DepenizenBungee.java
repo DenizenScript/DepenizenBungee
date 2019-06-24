@@ -75,6 +75,7 @@ public class DepenizenBungee extends Plugin implements Listener {
         packets.put(12, new ControlProxyPingPacketIn());
         packets.put(13, new ProxyPingResultPacketIn());
         packets.put(14, new RedirectPacketIn());
+        packets.put(15, new ExecuteCommandPacketIn());
     }
 
     @Override
