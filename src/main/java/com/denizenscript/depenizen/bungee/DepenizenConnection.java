@@ -1,5 +1,6 @@
 package com.denizenscript.depenizen.bungee;
 
+import com.denizenscript.depenizen.bungee.packets.in.MyInfoPacketIn;
 import com.denizenscript.depenizen.bungee.packets.out.AddServerPacketOut;
 import com.denizenscript.depenizen.bungee.packets.out.RemoveServerPacketOut;
 import io.netty.buffer.ByteBuf;
@@ -134,6 +135,10 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
                 waitingLength = tmp.readInt();
                 packetId = tmp.readInt();
                 currentStage = Stage.AWAIT_DATA;
+                if (thisServer == null && packetId != MyInfoPacketIn.PACKET_ID) {
+                    fail("Invalid FIRST packet id (must be MyInfoPacket): " + packetId);
+                    return;
+                }
                 if (!DepenizenBungee.instance.packets.containsKey(packetId)) {
                     fail("Invalid packet id: " + packetId);
                     return;

@@ -9,6 +9,8 @@ import net.md_5.bungee.api.config.ServerInfo;
 
 public class MyInfoPacketIn extends PacketIn {
 
+    public static int PACKET_ID = 11;
+
     @Override
     public String getName() {
         return "MyInfo";
@@ -28,7 +30,11 @@ public class MyInfoPacketIn extends PacketIn {
                 break;
             }
         }
-        connection.sendPacket(new YourInfoPacketOut(connection.thisServer == null ? "<unknown>" : connection.thisServer.getName()));
+        if (connection.thisServer == null) {
+            connection.fail("Invalid MyInfoPacket (unknown server)");
+            return;
+        }
+        connection.sendPacket(new YourInfoPacketOut(connection.thisServer.getName()));
         connection.broadcastIdentity();
     }
 }

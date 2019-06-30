@@ -59,7 +59,7 @@ public class DepenizenBungee extends Plugin implements Listener {
     public void registerPackets() {
         packets.put(0, new KeepAlivePacketIn());
         packets.put(10, new SendPlayerPacketIn());
-        packets.put(11, new MyInfoPacketIn());
+        packets.put(MyInfoPacketIn.PACKET_ID, new MyInfoPacketIn());
         packets.put(12, new ControlProxyPingPacketIn());
         packets.put(13, new ProxyPingResultPacketIn());
         packets.put(14, new RedirectPacketIn());
@@ -78,6 +78,9 @@ public class DepenizenBungee extends Plugin implements Listener {
                 long curTime = System.currentTimeMillis();
                 KeepAlivePacketOut packet = new KeepAlivePacketOut();
                 for (DepenizenConnection connection : getConnections()) {
+                    if (connection.thisServer == null) {
+                        continue;
+                    }
                     if (curTime > connection.lastPacketReceived + 20 * 1000) {
                         // 20 seconds without a packet = connection lost!
                         connection.fail("Connection time out.");
