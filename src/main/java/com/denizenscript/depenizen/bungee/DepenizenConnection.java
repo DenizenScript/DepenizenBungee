@@ -49,7 +49,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         ProxyServer.getInstance().getScheduler().schedule(DepenizenBungee.instance, new Runnable() {
             @Override
             public void run() {
-                if (thisServer.getName() != null) {
+                if (thisServer != null) {
                     DepenizenBungee.instance.broadcastPacket(new AddServerPacketOut(thisServer.getName()));
                 }
             }
@@ -60,7 +60,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         ProxyServer.getInstance().getScheduler().schedule(DepenizenBungee.instance, new Runnable() {
             @Override
             public void run() {
-                if (thisServer.getName() != null) {
+                if (thisServer != null) {
                     DepenizenBungee.instance.broadcastPacket(new RemoveServerPacketOut(thisServer.getName()));
                 }
             }
