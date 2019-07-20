@@ -31,7 +31,7 @@ public class MyInfoPacketIn extends PacketIn {
             }
         }
         if (connection.thisServer == null) {
-            connection.fail("Invalid MyInfoPacket (unknown server)");
+            connection.fail("Invalid MyInfoPacket (unknown server, gave port '" + port + "')");
             return;
         }
         connection.sendPacket(new YourInfoPacketOut(connection.thisServer.getName()));
