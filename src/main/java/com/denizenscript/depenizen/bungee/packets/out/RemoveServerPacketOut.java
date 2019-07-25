@@ -19,8 +19,6 @@ public class RemoveServerPacketOut extends PacketOut {
 
     @Override
     public void writeTo(ByteBuf buf) {
-        byte[] nameBytes = name.getBytes(Charsets.UTF_8);
-        buf.writeInt(nameBytes.length);
-        buf.writeBytes(nameBytes);
+        writeString(buf, name);
     }
 }

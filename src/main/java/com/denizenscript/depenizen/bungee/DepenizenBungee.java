@@ -3,6 +3,7 @@ package com.denizenscript.depenizen.bungee;
 import com.denizenscript.depenizen.bungee.packets.in.*;
 import com.denizenscript.depenizen.bungee.packets.out.*;
 import io.netty.channel.Channel;
+import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.event.*;
@@ -10,6 +11,7 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.event.EventHandler;
+import net.md_5.bungee.event.EventPriority;
 import net.md_5.bungee.netty.ChannelWrapper;
 
 import java.lang.invoke.MethodHandle;
@@ -18,7 +20,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class DepenizenBungee extends Plugin implements Listener {
 
@@ -64,6 +69,8 @@ public class DepenizenBungee extends Plugin implements Listener {
         packets.put(13, new ProxyPingResultPacketIn());
         packets.put(14, new RedirectPacketIn());
         packets.put(15, new ExecuteCommandPacketIn());
+        packets.put(16, new ControlProxyCommandPacketIn());
+        packets.put(17, new ProxyCommandResultPacketIn());
     }
 
     @Override
@@ -142,6 +149,83 @@ public class DepenizenBungee extends Plugin implements Listener {
         packet.name = event.getPlayer().getName();
         packet.uuid = event.getPlayer().getUniqueId();
         broadcastPacket(packet);
+    }
+
+    public static boolean proxyCommandNoDup = false;
+
+    public static long proxyCommandId = 1;
+
+    public HashMap<Long, CompletableFuture<String>> proxyCommandWaiters = new HashMap<>();
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onProxyCommand(ChatEvent event) {
+        if (!event.isProxyCommand()) {
+            return;
+        }
+        if (event.isCancelled()) {
+            return;
+        }
+        if (proxyCommandNoDup) {
+            return;
+        }
+        List<CompletableFuture<String>> futures = new ArrayList<>();
+        for (DepenizenConnection connection : getConnections()) {
+            if (connection.controlsProxyCommand && connection.isValid) {
+                long newId = proxyCommandId++;
+                CompletableFuture<String> future = new CompletableFuture<>();
+                futures.add(future);
+                proxyCommandWaiters.put(newId, future);
+                connection.sendPacket(new ProxyCommandPacketOut(newId, ((CommandSender) event.getSender()).getName(), event.getMessage()));
+            }
+        }
+        if (futures.isEmpty()) {
+            return;
+        }
+        event.setCancelled(true);
+        String[] command = new String[1];
+        command[0] = event.getMessage();
+        Runnable finished = new Runnable() {
+            @Override
+            public void run() {
+                proxyCommandNoDup = true;
+                try {
+                    ProxyServer.getInstance().getPluginManager().dispatchCommand((CommandSender) event.getSender(), command[0].substring(1));
+                }
+                finally {
+                    proxyCommandNoDup = false;
+                }
+            }
+        };
+        ProxyServer.getInstance().getScheduler().runAsync(this, new Runnable() {
+            @Override
+            public void run() {
+                for (CompletableFuture<String> future : futures) {
+                    try {
+                        String result = future.get(5, TimeUnit.SECONDS);
+                        if (result != null) {
+                            if (result.equalsIgnoreCase("cancelled")) {
+                                return;
+                            }
+                            else if (result.startsWith("/")) {
+                                command[0] = result;
+                            }
+                        }
+                    }
+                    catch (TimeoutException ex) {
+                        continue;
+                    }
+                    catch (ExecutionException ex) {
+                        ex.printStackTrace();
+                        return;
+                    }
+                    catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                        return;
+                    }
+                }
+                ProxyServer.getInstance().getScheduler().schedule(DepenizenBungee.this, finished, 0, TimeUnit.SECONDS);
+            }
+        });
     }
 
     @EventHandler
