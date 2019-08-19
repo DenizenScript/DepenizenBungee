@@ -264,7 +264,7 @@ public class DepenizenBungee extends Plugin implements Listener {
                 public void run() {
                     connection.build(channel, address);
                 }
-            }, 500, TimeUnit.MILLISECONDS);
+            }, 1, TimeUnit.MILLISECONDS);
         }
         catch (Throwable ex) {
             ex.printStackTrace();

@@ -13,7 +13,6 @@ import net.md_5.bungee.api.event.ProxyPingEvent;
 
 import java.net.InetAddress;
 import java.util.HashMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class DepenizenConnection extends ChannelInboundHandlerAdapter {
