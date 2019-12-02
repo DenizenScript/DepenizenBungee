@@ -62,7 +62,7 @@ public class DepenizenBungee extends Plugin implements Listener {
     }
 
     public void registerPackets() {
-        packets.put(0, new KeepAlivePacketIn());
+        packets.put(1, new KeepAlivePacketIn());
         packets.put(10, new SendPlayerPacketIn());
         packets.put(MyInfoPacketIn.PACKET_ID, new MyInfoPacketIn());
         packets.put(12, new ControlProxyPingPacketIn());
