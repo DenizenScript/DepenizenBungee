@@ -138,7 +138,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
                 packetId = tmp.readInt();
                 currentStage = Stage.AWAIT_DATA;
                 if (thisServer == null && packetId != MyInfoPacketIn.PACKET_ID) {
-                    fail("Invalid FIRST packet id (must be MyInfoPacket): " + packetId);
+                    fail("Invalid FIRST packet id (must be MyInfoPacket): " + packetId + ", data length thus far = " + tmp.readableBytes());
                     return;
                 }
                 if (!DepenizenBungee.instance.packets.containsKey(packetId)) {
