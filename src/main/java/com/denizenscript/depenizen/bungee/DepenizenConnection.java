@@ -75,7 +75,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
 
     public Channel channel;
 
-    public ByteBuf tmp;
+    public ByteBuf packetBuffer;
 
     public int waitingLength;
 
@@ -107,17 +107,29 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         channel.writeAndFlush(buf);
     }
 
+    public void reallocateBuf(ChannelHandlerContext ctx) {
+        ByteBuf newBuf = ctx.alloc().buffer(4);
+        if (packetBuffer != null) {
+            newBuf.writeBytes(packetBuffer);
+            packetBuffer.release();
+        }
+        packetBuffer = newBuf;
+    }
+
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
-        tmp = ctx.alloc().buffer(4);
+        if (packetBuffer != null) {
+            packetBuffer.release();
+        }
+        packetBuffer = ctx.alloc().buffer(4);
         lastPacketReceived = System.currentTimeMillis();
     }
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
         DepenizenBungee.instance.getLogger().info("Connection '" + connectionName + "' ended.");
-        tmp.release();
-        tmp = null;
+        packetBuffer.release();
+        packetBuffer = null;
         isValid = false;
         DepenizenBungee.instance.removeConnection(this);
         broadcastRemoval();
@@ -130,15 +142,15 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         ByteBuf m = (ByteBuf) msg;
-        tmp.writeBytes(m);
+        packetBuffer.writeBytes(m);
         m.release();
         if (currentStage == Stage.AWAIT_HEADER) {
-            if (tmp.readableBytes() >= 8) {
-                waitingLength = tmp.readInt();
-                packetId = tmp.readInt();
+            if (packetBuffer.readableBytes() >= 8) {
+                waitingLength = packetBuffer.readInt();
+                packetId = packetBuffer.readInt();
                 currentStage = Stage.AWAIT_DATA;
                 if (thisServer == null && packetId != MyInfoPacketIn.PACKET_ID) {
-                    fail("Invalid FIRST packet id (must be MyInfoPacket): " + packetId + ", data length thus far = " + tmp.readableBytes());
+                    fail("Invalid FIRST packet id (must be MyInfoPacket): " + packetId + ", data length thus far = " + packetBuffer.readableBytes());
                     return;
                 }
                 if (!DepenizenBungee.instance.packets.containsKey(packetId)) {
@@ -148,12 +160,13 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
             }
         }
         if (currentStage == Stage.AWAIT_DATA) {
-            if (tmp.readableBytes() >= waitingLength) {
+            if (packetBuffer.readableBytes() >= waitingLength) {
                 try {
                     lastPacketReceived = System.currentTimeMillis();
                     PacketIn packet = DepenizenBungee.instance.packets.get(packetId);
-                    packet.process(this, tmp);
+                    packet.process(this, packetBuffer);
                     currentStage = Stage.AWAIT_HEADER;
+                    reallocateBuf(ctx);
                 }
                 catch (Throwable ex) {
                     ex.printStackTrace();
