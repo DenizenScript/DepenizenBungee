@@ -144,8 +144,11 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         ByteBuf m = (ByteBuf) msg;
         packetBuffer.writeBytes(m);
         m.release();
-        if (currentStage == Stage.AWAIT_HEADER) {
-            if (packetBuffer.readableBytes() >= 8) {
+        while (true) {
+            if (currentStage == Stage.AWAIT_HEADER) {
+                if (packetBuffer.readableBytes() < 8) {
+                    return;
+                }
                 waitingLength = packetBuffer.readInt();
                 packetId = packetBuffer.readInt();
                 currentStage = Stage.AWAIT_DATA;
@@ -158,9 +161,10 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
                     return;
                 }
             }
-        }
-        if (currentStage == Stage.AWAIT_DATA) {
-            if (packetBuffer.readableBytes() >= waitingLength) {
+            else if (currentStage == Stage.AWAIT_DATA) {
+                if (packetBuffer.readableBytes() < waitingLength) {
+                    return;
+                }
                 try {
                     lastPacketReceived = System.currentTimeMillis();
                     PacketIn packet = DepenizenBungee.instance.packets.get(packetId);
@@ -173,6 +177,9 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
                     fail("Internal exception.");
                     return;
                 }
+            }
+            else {
+                return;
             }
         }
     }
