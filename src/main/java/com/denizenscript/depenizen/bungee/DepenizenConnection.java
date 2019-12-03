@@ -108,7 +108,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
     }
 
     public void reallocateBuf(ChannelHandlerContext ctx) {
-        ByteBuf newBuf = ctx.alloc().buffer(4);
+        ByteBuf newBuf = ctx.alloc().buffer(32);
         if (packetBuffer != null) {
             newBuf.writeBytes(packetBuffer);
             packetBuffer.release();
@@ -121,7 +121,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         if (packetBuffer != null) {
             packetBuffer.release();
         }
-        packetBuffer = ctx.alloc().buffer(4);
+        packetBuffer = ctx.alloc().buffer(32);
         lastPacketReceived = System.currentTimeMillis();
     }
 
