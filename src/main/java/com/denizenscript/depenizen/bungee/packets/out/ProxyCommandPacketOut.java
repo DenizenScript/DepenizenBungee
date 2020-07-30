@@ -3,12 +3,15 @@ package com.denizenscript.depenizen.bungee.packets.out;
 import com.denizenscript.depenizen.bungee.PacketOut;
 import io.netty.buffer.ByteBuf;
 
+import java.util.UUID;
+
 public class ProxyCommandPacketOut extends PacketOut {
 
-    public ProxyCommandPacketOut(long id ,String sender, String command) {
+    public ProxyCommandPacketOut(long id , String sender, UUID senderId, String command) {
         this.id = id;
         this.sender = sender;
         this.command = command;
+        this.senderId = senderId;
     }
 
     public long id;
@@ -16,6 +19,8 @@ public class ProxyCommandPacketOut extends PacketOut {
     public String sender;
 
     public String command;
+
+    public UUID senderId;
 
     @Override
     public int getPacketId() {
@@ -27,5 +32,6 @@ public class ProxyCommandPacketOut extends PacketOut {
         buf.writeLong(id);
         writeString(buf, sender);
         writeString(buf, command);
+        writeString(buf, senderId == null ? "" : senderId.toString());
     }
 }

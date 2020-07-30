@@ -6,6 +6,7 @@ import io.netty.channel.Channel;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -174,7 +175,8 @@ public class DepenizenBungee extends Plugin implements Listener {
                 CompletableFuture<String> future = new CompletableFuture<>();
                 futures.add(future);
                 proxyCommandWaiters.put(newId, future);
-                connection.sendPacket(new ProxyCommandPacketOut(newId, ((CommandSender) event.getSender()).getName(), event.getMessage()));
+                connection.sendPacket(new ProxyCommandPacketOut(newId, ((CommandSender) event.getSender()).getName(),
+                        event.getSender() instanceof ProxiedPlayer ? ((ProxiedPlayer) event.getSender()).getUniqueId() : null, event.getMessage()));
             }
         }
         if (futures.isEmpty()) {
