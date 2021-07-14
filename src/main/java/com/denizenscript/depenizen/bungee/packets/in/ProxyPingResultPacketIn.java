@@ -4,9 +4,12 @@ import com.denizenscript.depenizen.bungee.DepenizenBungee;
 import com.denizenscript.depenizen.bungee.DepenizenConnection;
 import com.denizenscript.depenizen.bungee.PacketIn;
 import io.netty.buffer.ByteBuf;
+import net.md_5.bungee.api.ServerPing;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.event.ProxyPingEvent;
+
+import java.util.UUID;
 
 public class ProxyPingResultPacketIn extends PacketIn {
 
@@ -17,7 +20,7 @@ public class ProxyPingResultPacketIn extends PacketIn {
 
     @Override
     public void process(DepenizenConnection connection, ByteBuf data) {
-        if (data.readableBytes() < 8 + 4 + 4) {
+        if (data.readableBytes() < 8 + 4 + 4 + 4) {
             connection.fail("Invalid ProxyPingResultPacket (bytes available: " + data.readableBytes() + ")");
             return;
         }
@@ -35,6 +38,24 @@ public class ProxyPingResultPacketIn extends PacketIn {
             return;
         }
         String motd = readString(data, motdLength);
+        int playerListCount = data.readInt();
+        if (playerListCount < -1 || playerListCount > 1024) {
+            connection.fail("Invalid ProxyPingResultPacket (playerListCount requested: " + playerListCount + ")");
+            return;
+        }
+        ServerPing.PlayerInfo[] playerInfo = playerListCount == -1 ? null : new ServerPing.PlayerInfo[playerListCount];
+        for (int i = 0; i < playerListCount; i++) {
+            int nameLength = data.readInt();
+            if (data.readableBytes() < nameLength || nameLength < 0) {
+                connection.fail("Invalid ProxyPingResultPacket (player " + i + "name bytes requested: " + nameLength + ")");
+                return;
+            }
+            String name = readString(data, nameLength);
+            long idMost = data.readLong();
+            long idLeast = data.readLong();
+            UUID uuid = new UUID(idMost, idLeast);
+            playerInfo[i] = new ServerPing.PlayerInfo(name, uuid);
+        }
         ProxyPingEvent event = connection.proxyEventMap.get(id);
         if (event == null) {
             return;
@@ -46,6 +67,9 @@ public class ProxyPingResultPacketIn extends PacketIn {
                 result.addExtra(comp);
             }
             event.getResponse().setDescriptionComponent(result);
+        }
+        if (playerInfo != null) {
+            event.getResponse().getPlayers().setSample(playerInfo);
         }
         event.getResponse().getVersion().setName(version);
         event.completeIntent(DepenizenBungee.instance);
