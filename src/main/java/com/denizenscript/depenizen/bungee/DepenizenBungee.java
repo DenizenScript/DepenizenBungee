@@ -247,7 +247,7 @@ public class DepenizenBungee extends Plugin implements Listener {
                 }
             }
             if (!isValid) {
-                getLogger().warning("INVALID/FAKE Depenizen connection denied from: " + handler.getAddress());
+                getLogger().warning("INVALID/FAKE Depenizen connection denied from: " + handler.getAddress() + "... if this was meant to be a real connection, make sure the server address in bungee.yml matches the IP shown here.");
                 return;
             }
         }
