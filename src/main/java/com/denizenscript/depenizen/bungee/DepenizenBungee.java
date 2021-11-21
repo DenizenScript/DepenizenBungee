@@ -263,11 +263,18 @@ public class DepenizenBungee extends Plugin implements Listener {
             getProxy().getScheduler().schedule(this, new Runnable() {
                 @Override
                 public void run() {
-                    connection.build(channel, address);
+                    try {
+                        connection.build(channel, address);
+                    }
+                    catch (Throwable ex) {
+                        getLogger().severe("Exception while handling Depenizen connection build...");
+                        ex.printStackTrace();
+                    }
                 }
             }, 1, TimeUnit.MILLISECONDS);
         }
         catch (Throwable ex) {
+            getLogger().severe("Exception while handling Depenizen handshake...");
             ex.printStackTrace();
             return;
         }

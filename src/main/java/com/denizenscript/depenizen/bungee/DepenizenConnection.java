@@ -40,7 +40,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         channel.close();
     }
 
-    public static enum Stage {
+    public enum Stage {
         AWAIT_HEADER,
         AWAIT_DATA
     }
@@ -98,13 +98,20 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
     public HashMap<Long, ProxyPingEvent> proxyEventMap = new HashMap<>();
 
     public void sendPacket(PacketOut packet) {
-        ByteBuf buf = channel.alloc().buffer();
-        packet.writeTo(buf);
-        ByteBuf header = channel.alloc().buffer();
-        header.writeInt(buf.writerIndex());
-        header.writeInt(packet.getPacketId());
-        channel.writeAndFlush(header);
-        channel.writeAndFlush(buf);
+        try {
+            ByteBuf buf = channel.alloc().buffer();
+            packet.writeTo(buf);
+            ByteBuf header = channel.alloc().buffer();
+            header.writeInt(buf.writerIndex());
+            header.writeInt(packet.getPacketId());
+            channel.writeAndFlush(header);
+            channel.writeAndFlush(buf);
+        }
+        catch (Throwable ex) {
+            DepenizenBungee.instance.getLogger().severe("Connection '" + connectionName + "' had error sending packet...");
+            ex.printStackTrace();
+            fail("Internal exception");
+        }
     }
 
     public void reallocateBuf(ChannelHandlerContext ctx) {
@@ -141,46 +148,53 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        ByteBuf m = (ByteBuf) msg;
-        packetBuffer.writeBytes(m);
-        m.release();
-        while (true) {
-            if (currentStage == Stage.AWAIT_HEADER) {
-                if (packetBuffer.readableBytes() < 8) {
-                    return;
+        try {
+            ByteBuf m = (ByteBuf) msg;
+            packetBuffer.writeBytes(m);
+            m.release();
+            while (true) {
+                if (currentStage == Stage.AWAIT_HEADER) {
+                    if (packetBuffer.readableBytes() < 8) {
+                        return;
+                    }
+                    waitingLength = packetBuffer.readInt();
+                    packetId = packetBuffer.readInt();
+                    currentStage = Stage.AWAIT_DATA;
+                    if (thisServer == null && packetId != MyInfoPacketIn.PACKET_ID) {
+                        fail("Invalid FIRST packet id (must be MyInfoPacket): " + packetId + ", data length thus far = " + packetBuffer.readableBytes());
+                        return;
+                    }
+                    if (!DepenizenBungee.instance.packets.containsKey(packetId)) {
+                        fail("Invalid packet id: " + packetId);
+                        return;
+                    }
                 }
-                waitingLength = packetBuffer.readInt();
-                packetId = packetBuffer.readInt();
-                currentStage = Stage.AWAIT_DATA;
-                if (thisServer == null && packetId != MyInfoPacketIn.PACKET_ID) {
-                    fail("Invalid FIRST packet id (must be MyInfoPacket): " + packetId + ", data length thus far = " + packetBuffer.readableBytes());
-                    return;
+                else if (currentStage == Stage.AWAIT_DATA) {
+                    if (packetBuffer.readableBytes() < waitingLength) {
+                        return;
+                    }
+                    try {
+                        lastPacketReceived = System.currentTimeMillis();
+                        PacketIn packet = DepenizenBungee.instance.packets.get(packetId);
+                        packet.process(this, packetBuffer);
+                        currentStage = Stage.AWAIT_HEADER;
+                        reallocateBuf(ctx);
+                    }
+                    catch (Throwable ex) {
+                        ex.printStackTrace();
+                        fail("Internal exception.");
+                        return;
+                    }
                 }
-                if (!DepenizenBungee.instance.packets.containsKey(packetId)) {
-                    fail("Invalid packet id: " + packetId);
+                else {
                     return;
                 }
             }
-            else if (currentStage == Stage.AWAIT_DATA) {
-                if (packetBuffer.readableBytes() < waitingLength) {
-                    return;
-                }
-                try {
-                    lastPacketReceived = System.currentTimeMillis();
-                    PacketIn packet = DepenizenBungee.instance.packets.get(packetId);
-                    packet.process(this, packetBuffer);
-                    currentStage = Stage.AWAIT_HEADER;
-                    reallocateBuf(ctx);
-                }
-                catch (Throwable ex) {
-                    ex.printStackTrace();
-                    fail("Internal exception.");
-                    return;
-                }
-            }
-            else {
-                return;
-            }
+        }
+        catch (Throwable ex) {
+            DepenizenBungee.instance.getLogger().severe("Connection '" + connectionName + "' had exception reading input packets...");
+            ex.printStackTrace();
+            fail("Internal exception");
         }
     }
 }
