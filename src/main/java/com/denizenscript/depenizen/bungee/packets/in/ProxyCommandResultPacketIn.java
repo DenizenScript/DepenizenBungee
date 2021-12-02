@@ -21,12 +21,10 @@ public class ProxyCommandResultPacketIn extends PacketIn {
             return;
         }
         long id = data.readLong();
-        int resultLength = data.readInt();
-        if (data.readableBytes() < resultLength || resultLength < 0) {
-            connection.fail("Invalid ProxyCommandResultPacket (result bytes requested: " + resultLength + ")");
+        String result = readString(connection, data, "result");
+        if (result == null) {
             return;
         }
-        String result = readString(data, resultLength);
         CompletableFuture<String> future = DepenizenBungee.instance.proxyCommandWaiters.get(id);
         if (future == null) {
             return;

@@ -19,12 +19,10 @@ public class RedirectPacketIn extends PacketIn {
             connection.fail("Invalid RedirectPacket (bytes available: " + data.readableBytes() + ")");
             return;
         }
-        int targetServerNameLength = data.readInt();
-        if (data.readableBytes() < targetServerNameLength || targetServerNameLength < 0) {
-            connection.fail("Invalid RedirectPacket (name bytes requested: " + targetServerNameLength + ")");
+        String serverName = readString(connection, data, "serverName");
+        if (serverName == null) {
             return;
         }
-        String serverName = readString(data, targetServerNameLength);
         int newPacketLen = data.readInt();
         if (data.readableBytes() < newPacketLen || newPacketLen < 0) {
             connection.fail("Invalid RedirectPacket (packet bytes requested: " + newPacketLen + ")");

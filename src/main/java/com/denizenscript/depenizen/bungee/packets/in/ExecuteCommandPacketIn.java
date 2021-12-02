@@ -14,16 +14,10 @@ public class ExecuteCommandPacketIn extends PacketIn {
 
     @Override
     public void process(DepenizenConnection connection, ByteBuf data) {
-        if (data.readableBytes() < 4) {
-            connection.fail("Invalid ExecuteCommandPacket (bytes available: " + data.readableBytes() + ")");
+        String command = readString(connection, data, "command");
+        if (command == null) {
             return;
         }
-        int commandLength = data.readInt();
-        if (data.readableBytes() < commandLength || commandLength < 0) {
-            connection.fail("Invalid ExecuteCommandPacket (version bytes requested: " + commandLength + ")");
-            return;
-        }
-        String command = readString(data, commandLength);
         ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), command);
     }
 }

@@ -35,7 +35,13 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         isValid = true;
     }
 
+    public boolean hasFailed = false;
+
     public void fail(String reason) {
+        if (hasFailed) {
+            return;
+        }
+        hasFailed = true;
         DepenizenBungee.instance.getLogger().info("Connection '" + connectionName + (thisServer == null ? "" : (" / " + thisServer.getName())) + "' failed: " + reason);
         channel.close();
     }

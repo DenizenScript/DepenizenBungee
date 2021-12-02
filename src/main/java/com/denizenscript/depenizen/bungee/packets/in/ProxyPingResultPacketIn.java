@@ -26,18 +26,11 @@ public class ProxyPingResultPacketIn extends PacketIn {
         }
         long id = data.readLong();
         int maxPlayers = data.readInt();
-        int versionLength = data.readInt();
-        if (data.readableBytes() < versionLength || versionLength < 0) {
-            connection.fail("Invalid ProxyPingResultPacket (version bytes requested: " + versionLength + ")");
+        String version = readString(connection, data, "version");
+        String motd = readString(connection, data, "motd");
+        if (version == null || motd == null) {
             return;
         }
-        String version = readString(data, versionLength);
-        int motdLength = data.readInt();
-        if (data.readableBytes() < motdLength || motdLength < 0) {
-            connection.fail("Invalid ProxyPingResultPacket (motd bytes requested: " + motdLength + ")");
-            return;
-        }
-        String motd = readString(data, motdLength);
         int playerListCount = data.readInt();
         if (playerListCount < -1 || playerListCount > 1024) {
             connection.fail("Invalid ProxyPingResultPacket (playerListCount requested: " + playerListCount + ")");
@@ -45,12 +38,10 @@ public class ProxyPingResultPacketIn extends PacketIn {
         }
         ServerPing.PlayerInfo[] playerInfo = playerListCount == -1 ? null : new ServerPing.PlayerInfo[playerListCount];
         for (int i = 0; i < playerListCount; i++) {
-            int nameLength = data.readInt();
-            if (data.readableBytes() < nameLength || nameLength < 0) {
-                connection.fail("Invalid ProxyPingResultPacket (player " + i + "name bytes requested: " + nameLength + ")");
+            String name = readString(connection, data, "name");
+            if (name == null) {
                 return;
             }
-            String name = readString(data, nameLength);
             long idMost = data.readLong();
             long idLeast = data.readLong();
             UUID uuid = new UUID(idMost, idLeast);
