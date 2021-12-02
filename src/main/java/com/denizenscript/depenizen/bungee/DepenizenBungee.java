@@ -140,6 +140,7 @@ public class DepenizenBungee extends Plugin implements Listener {
         PlayerJoinPacketOut packet = new PlayerJoinPacketOut();
         packet.name = event.getPlayer().getName();
         packet.uuid = event.getPlayer().getUniqueId();
+        packet.ip = event.getPlayer().getAddress().toString();
         broadcastPacket(packet);
     }
 
@@ -148,6 +149,7 @@ public class DepenizenBungee extends Plugin implements Listener {
         PlayerQuitPacketOut packet = new PlayerQuitPacketOut();
         packet.name = event.getPlayer().getName();
         packet.uuid = event.getPlayer().getUniqueId();
+        packet.ip = event.getPlayer().getAddress().toString();
         broadcastPacket(packet);
     }
 

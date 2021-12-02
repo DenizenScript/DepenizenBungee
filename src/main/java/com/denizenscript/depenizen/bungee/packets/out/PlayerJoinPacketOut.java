@@ -11,6 +11,8 @@ public class PlayerJoinPacketOut extends PacketOut {
 
     public UUID uuid;
 
+    public String ip;
+
     @Override
     public int getPacketId() {
         return 53;
@@ -21,5 +23,6 @@ public class PlayerJoinPacketOut extends PacketOut {
         buf.writeLong(uuid.getMostSignificantBits());
         buf.writeLong(uuid.getLeastSignificantBits());
         writeString(buf, name);
+        writeString(buf, ip);
     }
 }
