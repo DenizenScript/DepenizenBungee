@@ -24,7 +24,9 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
         while (channel.pipeline().firstContext() != null) {
             channel.pipeline().removeFirst();
         }
-        channel.pipeline().addLast(this).addLast(new NettyExceptionHandler());
+        NettyExceptionHandler handler = new NettyExceptionHandler();
+        handler.connection = this;
+        channel.pipeline().addLast(this).addLast(handler);
         for (DepenizenConnection server : DepenizenBungee.instance.getConnections()) {
             if (server.thisServer != null && server.thisServer.getName() != null) {
                 sendPacket(new AddServerPacketOut(server.thisServer.getName()));
@@ -187,6 +189,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
                         reallocateBuf(ctx);
                     }
                     catch (Throwable ex) {
+                        DepenizenBungee.instance.getLogger().info("Connection " + connectionName + " received exception, failing");
                         ex.printStackTrace();
                         fail("Internal exception.");
                         return;

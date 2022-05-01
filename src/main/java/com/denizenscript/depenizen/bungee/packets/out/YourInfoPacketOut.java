@@ -1,7 +1,6 @@
 package com.denizenscript.depenizen.bungee.packets.out;
 
 import com.denizenscript.depenizen.bungee.PacketOut;
-import com.google.common.base.Charsets;
 import io.netty.buffer.ByteBuf;
 
 public class YourInfoPacketOut extends PacketOut {

@@ -215,13 +215,16 @@ public class DepenizenBungee extends Plugin implements Listener {
                         }
                     }
                     catch (TimeoutException ex) {
+                        DepenizenBungee.instance.getLogger().info("Proxy ChatEvent TimeoutException");
                         continue;
                     }
                     catch (ExecutionException ex) {
+                        DepenizenBungee.instance.getLogger().info("Proxy ChatEvent ExecutionException");
                         ex.printStackTrace();
                         return;
                     }
                     catch (InterruptedException ex) {
+                        DepenizenBungee.instance.getLogger().info("Proxy ChatEvent InterruptedException");
                         ex.printStackTrace();
                         return;
                     }

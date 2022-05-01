@@ -6,8 +6,11 @@ import java.net.SocketAddress;
 
 public class NettyExceptionHandler extends ChannelDuplexHandler {
 
+    public DepenizenConnection connection;
+
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        DepenizenBungee.instance.getLogger().info("Connection " + connection.connectionName + " caught an exception");
         cause.printStackTrace();
     }
 
@@ -17,6 +20,7 @@ public class NettyExceptionHandler extends ChannelDuplexHandler {
             @Override
             public void operationComplete(ChannelFuture future) {
                 if (!future.isSuccess()) {
+                    DepenizenBungee.instance.getLogger().info("Connection " + connection.connectionName + " failed to operationComplete");
                     future.cause().printStackTrace();
                 }
             }
@@ -29,6 +33,7 @@ public class NettyExceptionHandler extends ChannelDuplexHandler {
             @Override
             public void operationComplete(ChannelFuture future) {
                 if (!future.isSuccess()) {
+                    DepenizenBungee.instance.getLogger().info("Connection " + connection.connectionName + " failed to close");
                     future.cause().printStackTrace();
                 }
             }
@@ -41,6 +46,7 @@ public class NettyExceptionHandler extends ChannelDuplexHandler {
             @Override
             public void operationComplete(ChannelFuture future) {
                 if (!future.isSuccess()) {
+                    DepenizenBungee.instance.getLogger().info("Connection " + connection.connectionName + " failed to write");
                     future.cause().printStackTrace();
                 }
             }

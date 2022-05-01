@@ -13,6 +13,7 @@ public class ReflectionHelper {
             return f;
         }
         catch (Exception ex) {
+            DepenizenBungee.instance.getLogger().info("ReflectionHelper.getField failed for " + field);
             ex.printStackTrace();
         }
         return null;
@@ -23,6 +24,7 @@ public class ReflectionHelper {
             return LOOKUP.unreflectGetter(getField(clazz, name));
         }
         catch (Exception ex) {
+            DepenizenBungee.instance.getLogger().info("ReflectionHelper.getGetter failed for " + name);
             ex.printStackTrace();
         }
         return null;
@@ -33,6 +35,7 @@ public class ReflectionHelper {
             return LOOKUP.unreflectSetter(getField(clazz, name));
         }
         catch (Exception ex) {
+            DepenizenBungee.instance.getLogger().info("ReflectionHelper.getSetter failed for " + name);
             ex.printStackTrace();
         }
         return null;
