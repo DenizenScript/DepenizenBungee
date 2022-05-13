@@ -33,7 +33,7 @@ public class RedirectPacketIn extends PacketIn {
         data.readBytes(newPacket, 0, newPacketLen);
         DepenizenConnection targetConnection = DepenizenBungee.instance.getConnectionByName(serverName);
         if (targetConnection == null) {
-            DepenizenBungee.instance.getLogger().warning("Invalid server name '" + serverName + "'");
+            DepenizenBungee.instance.getLogger().warning("(RedirectPacket from '" + connection.connectionName + "'): Invalid server name '" + serverName + "'");
             return;
         }
         targetConnection.sendPacket(new RedirectedPacketOut(newId, newPacket));
