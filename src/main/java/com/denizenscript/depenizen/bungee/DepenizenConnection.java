@@ -105,7 +105,7 @@ public class DepenizenConnection extends ChannelInboundHandlerAdapter {
 
     public HashMap<Long, ProxyPingEvent> proxyEventMap = new HashMap<>();
 
-    public void sendPacket(PacketOut packet) {
+    public synchronized void sendPacket(PacketOut packet) {
         try {
             ByteBuf buf = channel.alloc().buffer();
             packet.writeTo(buf);
