@@ -26,7 +26,7 @@
         <dependency>
             <groupId>net.md-5</groupId>
             <artifactId>bungeecord-proxy</artifactId>
-            <version>1.18-SNAPSHOT</version>
+            <version>1.19-SNAPSHOT</version>
             <scope>system</scope>
             <systemPath>${basedir}/lib/BungeeCord.jar</systemPath>
         </dependency>

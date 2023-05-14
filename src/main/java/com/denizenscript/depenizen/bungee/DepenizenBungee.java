@@ -71,6 +71,7 @@ public class DepenizenBungee extends Plugin implements Listener {
         packets.put(15, new ExecuteCommandPacketIn());
         packets.put(16, new ControlProxyCommandPacketIn());
         packets.put(17, new ProxyCommandResultPacketIn());
+        packets.put(18, new ExecutePlayerCommandPacketIn());
     }
 
     @Override
@@ -252,7 +253,8 @@ public class DepenizenBungee extends Plugin implements Listener {
                 }
             }
             if (!isValid) {
-                getLogger().warning("INVALID/FAKE Depenizen connection denied from: " + handler.getAddress() + "... if this was meant to be a real connection, make sure the server address in bungee.yml matches the IP shown here.");
+                getLogger().warning("INVALID/FAKE Depenizen connection denied from: " + handler.getAddress()
+                        + "... if this was meant to be a real connection, make sure the server address in your Bungee/config.yml matches the IP shown here.");
                 return;
             }
         }
