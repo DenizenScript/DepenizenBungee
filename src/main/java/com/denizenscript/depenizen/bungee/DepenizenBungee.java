@@ -142,6 +142,7 @@ public class DepenizenBungee extends Plugin implements Listener {
         packet.name = event.getPlayer().getName();
         packet.uuid = event.getPlayer().getUniqueId();
         packet.ip = event.getPlayer().getAddress().toString();
+        packet.host = event.getPlayer().getPendingConnection().getVirtualHost().getHostString();
         broadcastPacket(packet);
     }
 
